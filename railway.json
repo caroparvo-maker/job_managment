@@ -1,12 +1,11 @@
 {
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "npm install"
+    "buildCommand": "npm install --production=false"
   },
   "deploy": {
     "startCommand": "node server.js",
     "restartPolicyType": "ON_FAILURE",
-    "healthcheckPath": "/",
-    "sleepApplication": false
+    "healthcheckPath": "/"
   }
 }
