@@ -2,7 +2,6 @@
 
 // تحديد رابط API بشكل صحيح
 const API_BASE = (() => {
-    // في بيئة الإنتاج، استخدم نفس الرابط
     if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
         return `${window.location.protocol}//${window.location.host}`;
     }
@@ -11,7 +10,7 @@ const API_BASE = (() => {
 
 let currentUser = null;
 
-// ============= دوال localStorage (للتوافق مع الكود القديم) =============
+// ============= دوال localStorage =============
 const STORAGE_USERS = "jobportal_users";
 const STORAGE_JOBS = "jobportal_jobs";
 const STORAGE_APPLICATIONS = "jobportal_applications";
@@ -73,46 +72,37 @@ async function apiCall(endpoint, options = {}) {
     const url = `${API_BASE}/api${endpoint}`;
     console.log(`🌐 Calling API: ${url}`);
     
-    try {
-        const response = await fetch(url, {
-            method: options.method || 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers
-            },
-            body: options.body || null
-        });
-        
-        // التحقق من أن الاستجابة JSON
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            const text = await response.text();
-            console.error('Response is not JSON:', text.substring(0, 200));
-            throw new Error('الخادم لم يرد باستجابة صحيحة');
-        }
-        
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.error || 'حدث خطأ في الطلب');
-        }
-        
-        return data;
-    } catch (error) {
-        console.error('API Error:', error);
-        throw error;
+    const response = await fetch(url, {
+        method: options.method || 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: options.body || null
+    });
+    
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('الخادم لم يرد باستجابة صحيحة');
     }
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+        throw new Error(data.error || 'حدث خطأ في الطلب');
+    }
+    
+    return data;
 }
 
 // ============= دوال المصادقة =============
-async function registerUserAPI(userData) {
+async function registerUser(userData) {
     return apiCall('/register', { 
         method: 'POST', 
         body: JSON.stringify(userData) 
     });
 }
 
-async function loginUserAPI(email, password) {
+async function loginUser(email, password) {
     const data = await apiCall('/login', { 
         method: 'POST', 
         body: JSON.stringify({ email, password }) 
@@ -125,39 +115,49 @@ async function loginUserAPI(email, password) {
     return false;
 }
 
-async function getUsersAPI() {
-    return apiCall('/users');
+async function getUsers() {
+    try {
+        return await apiCall('/users');
+    } catch (error) {
+        console.warn('Using local users data');
+        return getUsersLocal();
+    }
 }
 
 // ============= دوال الوظائف =============
-async function getJobsAPI() {
-    return apiCall('/jobs');
+async function getJobs() {
+    try {
+        return await apiCall('/jobs');
+    } catch (error) {
+        console.warn('Using local jobs data');
+        return getJobsLocal();
+    }
 }
 
-async function createJobAPI(jobData) {
+async function createJob(jobData) {
     return apiCall('/jobs', { 
         method: 'POST', 
         body: JSON.stringify(jobData) 
     });
 }
 
-async function deleteJobAPI(jobCode) {
+async function deleteJob(jobCode) {
     return apiCall(`/jobs/${jobCode}`, { method: 'DELETE' });
 }
 
 // ============= دوال الطلبات =============
-async function applyToJobAPI(userCode, jobCode) {
+async function applyToJob(userCode, jobCode) {
     return apiCall('/applications', { 
         method: 'POST', 
         body: JSON.stringify({ user_code: userCode, job_code: jobCode }) 
     });
 }
 
-async function getCompanyApplicationsAPI(companyCode) {
+async function getCompanyApplications(companyCode) {
     return apiCall(`/company-applications/${companyCode}`);
 }
 
-async function updateApplicationStatusAPI(appCode, status) {
+async function updateApplicationStatus(appCode, status) {
     return apiCall(`/applications/${appCode}`, { 
         method: 'PUT', 
         body: JSON.stringify({ status }) 
@@ -165,60 +165,41 @@ async function updateApplicationStatusAPI(appCode, status) {
 }
 
 // ============= دوال الشركات =============
-async function getCompanyProfileAPI(userCode) {
+async function getCompanyProfile(userCode) {
     return apiCall(`/company-profile/${userCode}`);
 }
 
-async function updateCompanyProfileAPI(userCode, profileData) {
+async function updateCompanyProfile(userCode, profileData) {
     return apiCall(`/company-profile/${userCode}`, { 
         method: 'PUT', 
         body: JSON.stringify(profileData) 
     });
 }
 
-async function getCompanyJobsAPI(companyCode) {
+async function getCompanyJobs(companyCode) {
     return apiCall(`/company-jobs/${companyCode}`);
 }
 
 // ============= دوال مهارات المستخدم =============
-async function getUserSkillsAPI(userCode) {
+async function getUserSkills(userCode) {
     return apiCall(`/user-skills/${userCode}`);
 }
 
-async function updateUserSkillsAPI(userCode, skills) {
+async function updateUserSkills(userCode, skills) {
     return apiCall(`/user-skills/${userCode}`, { 
         method: 'PUT', 
         body: JSON.stringify({ skills }) 
     });
 }
 
-async function getUserApplicationsAPI(userCode) {
+async function getUserApplications(userCode) {
     return apiCall(`/user-applications/${userCode}`);
 }
 
-// ============= دوال التوافق مع localStorage =============
-async function getJobs() {
-    try {
-        return await getJobsAPI();
-    } catch (error) {
-        console.warn('Using local jobs data as fallback');
-        return getJobsLocal();
-    }
-}
-
-async function getUsers() {
-    try {
-        return await getUsersAPI();
-    } catch (error) {
-        console.warn('Using local users data as fallback');
-        return getUsersLocal();
-    }
-}
-
-// تصدير الدوال للاستخدام العام
-window.getUsers = getUsers;
+// ============= تصدير الدوال للاستخدام العام =============
+window.getUsersLocal = getUsersLocal;
 window.saveUsers = saveUsers;
-window.getJobs = getJobs;
+window.getJobsLocal = getJobsLocal;
 window.saveJobs = saveJobs;
 window.getApplications = getApplications;
 window.saveApplications = saveApplications;
@@ -227,18 +208,20 @@ window.saveCompaniesData = saveCompaniesData;
 window.getCurrentUser = getCurrentUser;
 window.setCurrentUser = setCurrentUser;
 window.logout = logout;
-window.registerUser = registerUserAPI;
-window.loginUser = loginUserAPI;
-window.createJob = createJobAPI;
-window.deleteJob = deleteJobAPI;
-window.applyToJob = applyToJobAPI;
-window.getCompanyApplications = getCompanyApplicationsAPI;
-window.updateApplicationStatus = updateApplicationStatusAPI;
-window.getCompanyProfile = getCompanyProfileAPI;
-window.updateCompanyProfile = updateCompanyProfileAPI;
-window.getCompanyJobs = getCompanyJobsAPI;
-window.getUserSkills = getUserSkillsAPI;
-window.updateUserSkills = updateUserSkillsAPI;
-window.getUserApplications = getUserApplicationsAPI;
+window.registerUser = registerUser;
+window.loginUser = loginUser;
+window.getUsers = getUsers;
+window.getJobs = getJobs;
+window.createJob = createJob;
+window.deleteJob = deleteJob;
+window.applyToJob = applyToJob;
+window.getCompanyApplications = getCompanyApplications;
+window.updateApplicationStatus = updateApplicationStatus;
+window.getCompanyProfile = getCompanyProfile;
+window.updateCompanyProfile = updateCompanyProfile;
+window.getCompanyJobs = getCompanyJobs;
+window.getUserSkills = getUserSkills;
+window.updateUserSkills = updateUserSkills;
+window.getUserApplications = getUserApplications;
 
 console.log('✅ utils.js loaded, API_BASE:', API_BASE);
