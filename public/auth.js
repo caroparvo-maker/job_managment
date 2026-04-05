@@ -1,8 +1,10 @@
-async function loginUser(email, password) {
+// auth.js - دوال المصادقة
+
+async function loginUserHandler(email, password) {
     try {
         const success = await window.loginUser(email, password);
         if (success) {
-            const user = getCurrentUser();
+            const user = window.getCurrentUser();
             if (user.type === "company") {
                 window.location.href = "company-dashboard.html";
             } else {
@@ -20,7 +22,7 @@ async function loginUser(email, password) {
     }
 }
 
-async function registerUser(fullname, email, password, type) {
+async function registerUserHandler(fullname, email, password, type) {
     try {
         const userData = {
             name: fullname,
@@ -35,6 +37,7 @@ async function registerUser(fullname, email, password, type) {
         }
         
         await window.registerUser(userData);
+        alert("تم إنشاء الحساب بنجاح! يمكنك تسجيل الدخول الآن.");
         return true;
     } catch (error) {
         console.error('Register error:', error);
