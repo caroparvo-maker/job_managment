@@ -4,23 +4,15 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
-const compression = require('compression');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// تحسينات الأداء
-app.use(compression());
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json());
 
-// خدمة الملفات الثابتة مع cache
-app.use(express.static(__dirname, {
-    maxAge: '1d',
-    etag: true,
-    lastModified: true
-}));
+// خدمة الملفات الثابتة
+app.use(express.static(__dirname));
 
 // قاعدة البيانات
 const dbPath = process.env.DATABASE_PATH || './database.db';
@@ -32,7 +24,7 @@ db.pragma('synchronous = NORMAL');
 
 console.log('✅ تم الاتصال بقاعدة البيانات');
 
-// إنشاء الجداول (نفس الكود القديم)
+// إنشاء الجداول
 db.exec(`
     CREATE TABLE IF NOT EXISTS users (
         code TEXT PRIMARY KEY,
@@ -95,7 +87,7 @@ db.exec(`
 
 console.log('✅ تم إنشاء الجداول بنجاح');
 
-// إضافة بيانات تجريبية (نفس الكود القديم)
+// إضافة بيانات تجريبية
 const row = db.prepare("SELECT COUNT(*) as count FROM users").get();
 if (row.count === 0) {
     console.log('📝 جاري إضافة بيانات تجريبية...');
@@ -142,7 +134,7 @@ if (row.count === 0) {
     console.log('   باحث: user@test.com / 123456');
 }
 
-// ============= API ENDPOINTS (نفس الكود القديم) =============
+// ============= API ENDPOINTS =============
 
 app.get('/api/users', (req, res) => {
     try {
