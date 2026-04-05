@@ -4,21 +4,35 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
+const compression = require('compression');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+// تحسينات الأداء
+app.use(compression());
 app.use(cors());
-app.use(express.json());
-app.use(express.static('public'));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// استخدام better-sqlite3
+// خدمة الملفات الثابتة مع cache
+app.use(express.static(__dirname, {
+    maxAge: '1d',
+    etag: true,
+    lastModified: true
+}));
+
+// قاعدة البيانات
 const dbPath = process.env.DATABASE_PATH || './database.db';
 const db = new Database(dbPath);
 
+// تمكين WAL mode لتحسين الأداء
+db.pragma('journal_mode = WAL');
+db.pragma('synchronous = NORMAL');
+
 console.log('✅ تم الاتصال بقاعدة البيانات');
 
-// إنشاء الجداول
+// إنشاء الجداول (نفس الكود القديم)
 db.exec(`
     CREATE TABLE IF NOT EXISTS users (
         code TEXT PRIMARY KEY,
@@ -81,7 +95,7 @@ db.exec(`
 
 console.log('✅ تم إنشاء الجداول بنجاح');
 
-// إضافة بيانات تجريبية
+// إضافة بيانات تجريبية (نفس الكود القديم)
 const row = db.prepare("SELECT COUNT(*) as count FROM users").get();
 if (row.count === 0) {
     console.log('📝 جاري إضافة بيانات تجريبية...');
@@ -128,7 +142,7 @@ if (row.count === 0) {
     console.log('   باحث: user@test.com / 123456');
 }
 
-// ============= API ENDPOINTS =============
+// ============= API ENDPOINTS (نفس الكود القديم) =============
 
 app.get('/api/users', (req, res) => {
     try {
@@ -391,13 +405,16 @@ app.put('/api/user-skills/:user_code', (req, res) => {
     }
 });
 
-// serve static files
-app.use(express.static(path.join(__dirname)));
-
-// catch-all route for SPA
-app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api')) {
-        res.sendFile(path.join(__dirname, 'index.html'));
+// معالجة جميع الطلبات غير API
+app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+        next();
+    } else {
+        res.sendFile(path.join(__dirname, req.path), err => {
+            if (err) {
+                res.sendFile(path.join(__dirname, 'index.html'));
+            }
+        });
     }
 });
 
