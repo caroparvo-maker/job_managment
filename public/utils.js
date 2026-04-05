@@ -4,8 +4,8 @@
 const API_BASE = (() => {
     // إذا كنا في بيئة الإنتاج (Railway, Render, إلخ)
     if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        // استخدم نفس الرابط الحالي
-        return '';
+        // استخدم نفس الرابط الحالي (نفس البروتوكول والنطاق)
+        return `${window.location.protocol}//${window.location.host}`;
     }
     // محلياً
     return 'http://localhost:3000';
@@ -75,6 +75,7 @@ async function apiCall(endpoint, options = {}) {
     try {
         const url = `${API_BASE}/api${endpoint}`;
         console.log(`🌐 Calling API: ${url}`);
+        
         const response = await fetch(url, {
             headers: { 'Content-Type': 'application/json' },
             ...options
@@ -87,6 +88,8 @@ async function apiCall(endpoint, options = {}) {
         return response.json();
     } catch (error) {
         console.error('API Error:', error);
+        console.error('API_BASE:', API_BASE);
+        console.error('Endpoint:', endpoint);
         throw error;
     }
 }
