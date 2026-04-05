@@ -1,3 +1,4 @@
+const API_BASE = window.location.origin; // هذا سيأخذ الرابط الحالي تلقائياً
 
 async function loginUser(email, password) {
     try {
