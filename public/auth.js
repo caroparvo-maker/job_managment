@@ -1,30 +1,21 @@
-const API_BASE = window.location.origin; // هذا سيأخذ الرابط الحالي تلقائياً
-
 async function loginUser(email, password) {
     try {
-        const response = await fetch(`${API_BASE}/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            setCurrentUser(result.user);
-            if (result.user.type === "company") {
+        const success = await window.loginUser(email, password);
+        if (success) {
+            const user = getCurrentUser();
+            if (user.type === "company") {
                 window.location.href = "company-dashboard.html";
             } else {
                 window.location.href = "user-dashboard.html";
             }
             return true;
         } else {
-            alert(result.error || "البريد الإلكتروني أو كلمة المرور غير صحيحة");
+            alert("البريد الإلكتروني أو كلمة المرور غير صحيحة");
             return false;
         }
     } catch (error) {
         console.error('Login error:', error);
-        alert("حدث خطأ في الاتصال بالخادم. تأكد من تشغيل الخادم على http://localhost:3000");
+        alert("حدث خطأ في الاتصال بالخادم: " + error.message);
         return false;
     }
 }
@@ -43,23 +34,11 @@ async function registerUser(fullname, email, password, type) {
             userData.contact_email = email;
         }
         
-        const response = await fetch(`${API_BASE}/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(userData)
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            return true;
-        } else {
-            alert(result.error || "حدث خطأ في التسجيل");
-            return false;
-        }
+        await window.registerUser(userData);
+        return true;
     } catch (error) {
         console.error('Register error:', error);
-        alert("حدث خطأ في الاتصال بالخادم. تأكد من تشغيل الخادم على http://localhost:3000");
+        alert("حدث خطأ: " + error.message);
         return false;
     }
 }
