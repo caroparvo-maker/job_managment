@@ -1,4 +1,4 @@
-// register.js - معدل للعمل مع API
+// register.js
 document.getElementById("registerForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     
@@ -8,40 +8,37 @@ document.getElementById("registerForm").addEventListener("submit", async (e) => 
     const confirmPassword = document.getElementById("confirmPassword").value;
     const userType = document.getElementById("userType").value;
     
-    // التحقق من تطابق كلمة المرور
     if (password !== confirmPassword) {
         alert("كلمتا المرور غير متطابقتين");
         return;
     }
     
-    // التحقق من طول كلمة المرور
     if (password.length < 6) {
         alert("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
         return;
     }
     
-    // تعطيل الزر أثناء المعالجة
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التسجيل...';
     submitBtn.disabled = true;
     
     try {
-        const result = await registerUser(fullname, email, password, userType);
-        
-        if (result) {
-            alert("تم إنشاء الحساب بنجاح! يمكنك تسجيل الدخول الآن.");
+        const success = await registerUserHandler(fullname, email, password, userType);
+        if (success) {
             window.location.href = "login.html";
+        } else {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
         }
     } catch (error) {
         alert("حدث خطأ: " + error.message);
-    } finally {
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
     }
 });
 
-// إضافة التحقق من صحة البريد الإلكتروني في الوقت الفعلي
+// التحقق من صحة البريد الإلكتروني
 document.getElementById("email").addEventListener("blur", function() {
     const email = this.value;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -53,11 +50,12 @@ document.getElementById("email").addEventListener("blur", function() {
     }
 });
 
-// إظهار/إخفاء كلمة المرور (تحسين تجربة المستخدم)
+// إظهار/إخفاء كلمة المرور
 const addPasswordToggle = () => {
     const passwordFields = ['password', 'confirmPassword'];
     passwordFields.forEach(fieldId => {
         const field = document.getElementById(fieldId);
+        if (!field) return;
         const wrapper = field.parentElement;
         const toggleBtn = document.createElement('button');
         toggleBtn.type = 'button';
